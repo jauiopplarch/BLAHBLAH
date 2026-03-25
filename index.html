@@ -284,13 +284,21 @@
         let editingTextEl = null;
         let startPos = { x: 0, y: 0 };
         let currentPageIndex = -1; 
-        let journalData = JSON.parse(localStorage.getItem('myJournalData')) || { coverBg: '', globalBg: '', pages: [] };
+        
+        let journalData = JSON.parse(localStorage.getItem('myJournalData')) || { coverBg: '', globalBg: '', coverContent: [], fixedLeftContent: [], pages: [] };
 
         function init() {
             if (journalData.coverBg) cover.style.backgroundImage = `url('${journalData.coverBg}')`;
             if (journalData.globalBg) document.body.style.backgroundImage = `url('${journalData.globalBg}')`;
-            journalData.pages.forEach((p, index) => createPageElement(index));
-            save();
+            
+            if(journalData.coverContent) journalData.coverContent.forEach(item => restoreDraggable(item, cover.querySelector('.sticker-layer')));
+            if(journalData.fixedLeftContent) journalData.fixedLeftContent.forEach(item => restoreDraggable(item, leftPageFixed.querySelector('.sticker-layer')));
+
+            journalData.pages.forEach((pData, index) => {
+                const p = createPageElement(index);
+                if (pData.bg) p.style.backgroundImage = `url('${pData.bg}')`;
+                if (pData.content) pData.content.forEach(item => restoreDraggable(item, p.querySelector('.sticker-layer')));
+            });
         }
 
         window.oncontextmenu = (e) => {
@@ -336,8 +344,8 @@
             p.className = 'page page-inside hidden';
             p.id = `page-idx-${index}`;
             p.innerHTML = `<div class="lines"></div><div class="sticker-layer" style="position:absolute; inset:0; pointer-events:none;"></div>`;
-            if (journalData.pages[index].bg) p.style.backgroundImage = `url('${journalData.pages[index].bg}')`;
             pagesContainer.appendChild(p);
+            return p;
         }
 
         function showPage(index) { hideAllPages(); currentPageIndex = index; document.getElementById(`page-idx-${index}`).classList.remove('hidden'); }
@@ -383,27 +391,61 @@
             el.style.pointerEvents = 'auto';
             
             let activeLayer;
-            if (isOpened && currentPageIndex === 0) {
-                activeLayer = leftPageFixed.querySelector('.sticker-layer');
-            } else if (!isOpened) {
-                activeLayer = cover.querySelector('.sticker-layer');
-            } else {
-                activeLayer = document.getElementById(`page-idx-${currentPageIndex}`).querySelector('.sticker-layer');
-            }
+            if (isOpened && currentPageIndex === 0) activeLayer = leftPageFixed.querySelector('.sticker-layer');
+            else if (!isOpened) activeLayer = cover.querySelector('.sticker-layer');
+            else activeLayer = document.getElementById(`page-idx-${currentPageIndex}`).querySelector('.sticker-layer');
             
             activeLayer.appendChild(el);
             setupInteractions(el);
             save();
         }
 
+        function restoreDraggable(data, layer) {
+            const el = document.createElement(data.type === 'img' ? 'img' : 'div');
+            el.className = 'draggable';
+            if (data.type === 'img') { el.src = data.content; el.style.width = data.width || '120px'; }
+            else { 
+                el.innerText = data.content; 
+                el.classList.add('pixel-text-node'); 
+                el.style.fontFamily = data.font;
+                el.style.color = data.color;
+                el.style.fontSize = data.size;
+                el.style.textShadow = data.shadow;
+                el.onclick = (e) => { e.stopPropagation(); openTextConfig(el); };
+            }
+            el.style.left = data.left;
+            el.style.top = data.top;
+            el.dataset.rot = data.rot;
+            el.dataset.scale = data.scale;
+            el.style.transform = `rotate(${data.rot}deg) scale(${data.scale})`;
+            el.style.pointerEvents = 'auto';
+            layer.appendChild(el);
+            setupInteractions(el);
+        }
+
         function setupInteractions(el) {
+            // ANIMATION ZOOM QUAND LA SOURIS PASSE DESSUS
+            el.onmouseenter = () => {
+                if (!activeEl) { // Ne pas zoomer si on est déjà en train de le déplacer
+                    let r = el.dataset.rot || 0;
+                    let s = parseFloat(el.dataset.scale) || 1;
+                    el.style.transform = `scale(${s * 1.1}) rotate(${r}deg)`;
+                }
+            };
+            el.onmouseleave = () => {
+                if (!activeEl) { // Ne pas dé-zoomer si on est en train de le déplacer
+                    let r = el.dataset.rot || 0;
+                    let s = parseFloat(el.dataset.scale) || 1;
+                    el.style.transform = `scale(${s}) rotate(${r}deg)`;
+                }
+            };
+
             el.onmousedown = (e) => {
                 if (e.button === 0) { 
                     activeEl = el; 
                     startPos.x = e.clientX - el.offsetLeft; 
                     startPos.y = e.clientY - el.offsetTop; 
                     el.style.zIndex = 1000;
-                    // EFFET ZOOM AU CLIC
                     let r = el.dataset.rot || 0;
                     let s = parseFloat(el.dataset.scale) || 1;
                     el.style.transform = `scale(${s * 1.1}) rotate(${r}deg)`;
@@ -428,18 +470,14 @@
         }
 
         document.onmousemove = (e) => { if (activeEl) { activeEl.style.left = (e.clientX - startPos.x) + 'px'; activeEl.style.top = (e.clientY - startPos.y) + 'px'; } };
-        
-        document.onmouseup = () => { 
-            if (activeEl) { 
-                activeEl.style.zIndex = 10; 
-                // RETOUR TAILLE NORMALE
-                let r = activeEl.dataset.rot || 0;
-                let s = parseFloat(activeEl.dataset.scale) || 1;
-                activeEl.style.transform = `scale(${s}) rotate(${r}deg)`;
-                activeEl = null; 
-                save(); 
-            } 
-        };
+        document.onmouseup = () => { if (activeEl) { 
+            activeEl.style.zIndex = 10; 
+            let r = activeEl.dataset.rot || 0;
+            let s = parseFloat(activeEl.dataset.scale) || 1;
+            activeEl.style.transform = `scale(${s}) rotate(${r}deg)`;
+            activeEl = null; 
+            save(); 
+        } };
 
         function openTextConfig(el) {
             editingTextEl = el;
@@ -457,7 +495,34 @@
             save();
         }
 
-        function save() { localStorage.setItem('myJournalData', JSON.stringify(journalData)); }
+        function save() {
+            const extractData = (layer) => {
+                return Array.from(layer.querySelectorAll('.draggable')).map(el => ({
+                    type: el.tagName.toLowerCase() === 'img' ? 'img' : 'text',
+                    content: el.tagName.toLowerCase() === 'img' ? el.src : el.innerText,
+                    left: el.style.left,
+                    top: el.style.top,
+                    rot: el.dataset.rot,
+                    scale: el.dataset.scale,
+                    width: el.style.width,
+                    font: el.style.fontFamily,
+                    color: el.style.color,
+                    size: el.style.fontSize,
+                    shadow: el.style.textShadow
+                }));
+            };
+
+            journalData.coverContent = extractData(cover.querySelector('.sticker-layer'));
+            journalData.fixedLeftContent = extractData(leftPageFixed.querySelector('.sticker-layer'));
+            
+            journalData.pages.forEach((pData, idx) => {
+                const pEl = document.getElementById(`page-idx-${idx}`);
+                if(pEl) pData.content = extractData(pEl.querySelector('.sticker-layer'));
+            });
+
+            localStorage.setItem('myJournalData', JSON.stringify(journalData));
+        }
+
         init();
     </script>
 </body>
