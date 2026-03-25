@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Journal Intime Aesthetic 🌸</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Quicksand:wght@500&family=Pacifico&family=Dancing+Script&family=Permanent+Marker&family=Bungee+Shade&family=Creepster&family=Lobster&family=Press+Start+2P&family=Satisfy&family=Comfortaa:wght@700&family=Caveat:wght@700&family=Shadows+Into+Light&family=Righteous&family=Amatic+SC:wght@700&family=Abril+Fatface&family=Gloria+Hallelujah&family=Orbitron:wght@700&family=Monoton&family=Sacramento&family=Indie+Flower&family=Patrick+Hand&family=Special+Elite&family=Luckiest+Guy&family=Chewy&family=Fredoka+One&family=Homemade+Apple&family=Zeyada&family=Rock+Salt&family=UnifrakturMaguntia&family=Bangers&family=Alumni+Sans+Pinstripe:ital@1&family=Nabla&family=Rubik+Pixels&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-soft: #fdf0f6;
+            --pixel-border: 4px solid #5d4037;
+            --paper: #fffcf9;
+        }
+
+        * { box-sizing: border-box; cursor: url('https://cur.cursors-4u.net/games/gam-4/gam372.cur'), auto; }
+
+        body {
+            background-color: var(--bg-soft);
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Quicksand', sans-serif;
+            overflow: hidden;
+            background-image: radial-gradient(#ffcad4 1px, transparent 1px);
+            background-size: 25px 25px;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: cover;
+        }
+
+        #book-wrapper { perspective: 2000px; z-index: 10; }
+
+        #book {
+            width: 450px;
+            height: 600px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 1s cubic-bezier(0.645, 0.045, 0.355, 1);
+        }
+
+        .page {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            border: var(--pixel-border);
+            border-radius: 2px 10px 10px 2px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.1);
+            background: var(--paper);
+            background-size: cover;
+            background-position: center;
+            transition: transform 0.8s, opacity 0.8s;
+            backface-visibility: hidden;
+        }
+
+        #left-page-fixed {
+            left: -100%;
+            border-radius: 10px 2px 2px 10px;
+            z-index: 50;
+            display: none;
+        }
+
+        .cover {
+            z-index: 100;
+            transform-origin: left;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #e6be94;
+            transform-style: preserve-3d;
+        }
+
+        .turn-effect { 
+            transform: rotateY(-180deg); 
+            z-index: 100;
+        }
+
+        .page-inside { z-index: 1; padding: 40px; }
+
+        .lines {
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px);
+            background-size: 100% 30px;
+            pointer-events: none;
+        }
+
+        .draggable {
+            position: absolute;
+            cursor: grab;
+            user-select: none;
+            z-index: 10;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-origin: center;
+        }
+
+        .pixel-text-node {
+            font-family: 'VT323', monospace;
+            font-size: 1.8rem;
+            color: #4a3728;
+            white-space: nowrap;
+        }
+
+        #pixel-menu {
+            position: fixed;
+            background: white;
+            border: var(--pixel-border);
+            box-shadow: 6px 6px 0px #5d4037;
+            z-index: 2000;
+            width: 200px;
+            display: none;
+            padding: 5px;
+        }
+
+        .menu-item {
+            padding: 10px;
+            font-family: 'VT323', monospace;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .menu-item:hover { background: #fff0f3; color: #ff80ab; }
+
+        .hidden { display: none !important; }
+
+        #text-config {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border: var(--pixel-border);
+            padding: 20px;
+            z-index: 3000;
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 10px 10px 0px #5d4037;
+            max-height: 85vh;
+            overflow-y: auto;
+            width: 300px;
+        }
+
+        select, input[type="number"], input[type="text"] {
+            padding: 8px;
+            border: 2px solid #5d4037;
+            font-family: 'Quicksand', sans-serif;
+            width: 100%;
+        }
+
+        #music-player {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            border: var(--pixel-border);
+            padding: 10px;
+            z-index: 5000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 4px 4px 0px #5d4037;
+        }
+        #music-player button {
+            background: #ffcad4;
+            border: 2px solid #5d4037;
+            cursor: pointer;
+            font-family: 'VT323';
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="book-wrapper">
+        <div id="book">
+            <div class="page" id="left-page-fixed">
+                <div class="lines"></div>
+                <div class="sticker-layer" style="position:absolute; inset:0; pointer-events:none;"></div>
+            </div>
+
+            <div class="page cover" id="page-cover">
+                <div class="lines"></div>
+                <div class="sticker-layer" style="position:absolute; inset:0; pointer-events:none;"></div>
+            </div>
+            
+            <div id="pages-container"></div>
+        </div>
+    </div>
+
+    <div id="music-player">
+        <span style="font-family:'VT323'; font-size:1.2rem;">♫</span>
+        <button onclick="toggleMusic()" id="play-btn">PLAY</button>
+        <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="0.5" style="width:60px; cursor:pointer;">
+        <button onclick="setMusicUrl()" title="Changer la musique">⚙</button>
+        <audio id="bg-audio" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
+    </div>
+
+    <div id="text-config">
+        <h3 style="margin:0; font-family:'VT323'; text-align:center;">ÉDITEUR DE TEXTE 🎨</h3>
+        <label style="font-size:0.8rem;">Modifier le texte :</label>
+        <input type="text" id="text-input-edit">
+        <label style="font-size:0.8rem;">Police Unique :</label>
+        <select id="font-select">
+            <optgroup label="--- NOUVEAU & UNIQUE ---">
+                <option value="'UnifrakturMaguntia', cursive">Gothique / Old English</option>
+                <option value="'Nabla', system-ui">3D Chrome</option>
+                <option value="'Rubik Pixels', cursive">Pixel Art Moderne</option>
+                <option value="'Bangers', cursive">Comics / Super Héros</option>
+                <option value="'Alumni Sans Pinstripe', sans-serif">Ultra Fin Italic</option>
+            </optgroup>
+            <optgroup label="--- PIXEL & RETRO ---">
+                <option value="'VT323', monospace">Pixel Classic</option>
+                <option value="'Press Start 2P', cursive">Retro Game</option>
+                <option value="'Orbitron', sans-serif">Futuriste</option>
+            </optgroup>
+            <optgroup label="--- AESTHETIC ---">
+                <option value="'Pacifico', cursive">Aesthetic Wave</option>
+                <option value="'Satisfy', cursive">Élégant Silk</option>
+                <option value="'Comfortaa', cursive">Bulle Ronde</option>
+                <option value="'Sacramento', cursive">Plume Fine</option>
+            </optgroup>
+            <optgroup label="--- FUNKY ---">
+                <option value="'Luckiest Guy', cursive">Cartoon</option>
+                <option value="'Monoton', cursive">Disco Neon</option>
+                <option value="'Fredoka One', cursive">Bubble Gum</option>
+                <option value="'Creepster', cursive">Zombie / Horreur</option>
+            </optgroup>
+        </select>
+        <label style="font-size:0.8rem;">Effet Spécial :</label>
+        <select id="effect-select">
+            <option value="none">Aucun</option>
+            <option value="glow">✨ Brillance (Glow)</option>
+            <option value="shadow">🌑 Ombre Portée (3D)</option>
+            <option value="outline">✏️ Contour (Outline)</option>
+            <option value="blur">🌫️ Flou Mystérieux</option>
+        </select>
+        <div style="display:flex; gap:10px;">
+            <div style="flex:1;"><label style="font-size:0.8rem;">Couleur :</label><input type="color" id="color-select" value="#4a3728"></div>
+            <div style="flex:1;"><label style="font-size:0.8rem;">Taille :</label><input type="number" id="size-select" value="30"></div>
+        </div>
+        <button onclick="applyTextStyles()" style="cursor:pointer; padding:12px; background:#ffcad4; border:2px solid #5d4037; font-family:'VT323'; font-size:1.2rem; margin-top:5px;">APPLIQUER !</button>
+        <button onclick="document.getElementById('text-config').style.display='none'" style="background:none; border:none; text-decoration:underline; font-size:0.7rem; cursor:pointer;">Annuler</button>
+    </div>
+
+    <div id="pixel-menu">
+        <div class="menu-item" onclick="handlePageNext()">📖 Page Suivante / Ouvrir</div>
+        <div class="menu-item" onclick="handlePagePrev()">🔙 Page Précédente</div>
+        <div class="menu-item" onclick="changeCurrentBg()">📖 Fond du Journal</div>
+        <div class="menu-item" onclick="changeGlobalBg()">🖼️ Fond d'Écran (Site)</div>
+        <div class="menu-item" onclick="addStickerByUrl()">✨ Sticker / GIF</div>
+        <div class="menu-item" onclick="addNewText()">✍️ Ajouter Texte</div>
+        <hr>
+        <div class="menu-item" style="font-size:0.8rem; opacity:0.6;">Clic milieu = Supprimer | Ctrl+Molette = Taille</div>
+    </div>
+
+    <script>
+        const audio = document.getElementById('bg-audio');
+        const playBtn = document.getElementById('play-btn');
+        const volSlider = document.getElementById('volume-slider');
+
+        function toggleMusic() {
+            if (audio.paused) { audio.play(); playBtn.innerText = "STOP"; }
+            else { audio.pause(); playBtn.innerText = "PLAY"; }
+        }
+        volSlider.oninput = () => { audio.volume = volSlider.value; };
+        function setMusicUrl() {
+            const url = prompt("Lien direct de ta musique (MP3) :");
+            if (url) { audio.src = url; audio.play(); playBtn.innerText = "STOP"; }
+        }
+
+        const book = document.getElementById('book');
+        const cover = document.getElementById('page-cover');
+        const leftPageFixed = document.getElementById('left-page-fixed');
+        const pagesContainer = document.getElementById('pages-container');
+        const menu = document.getElementById('pixel-menu');
+        const textConfig = document.getElementById('text-config');
+        
+        let isOpened = false;
+        let activeEl = null;
+        let editingTextEl = null;
+        let startPos = { x: 0, y: 0 };
+        let currentPageIndex = -1; 
+        let journalData = JSON.parse(localStorage.getItem('myJournalData')) || { coverBg: '', globalBg: '', pages: [] };
+
+        function init() {
+            if (journalData.coverBg) cover.style.backgroundImage = `url('${journalData.coverBg}')`;
+            if (journalData.globalBg) document.body.style.backgroundImage = `url('${journalData.globalBg}')`;
+            journalData.pages.forEach((p, index) => createPageElement(index));
+            save();
+        }
+
+        window.oncontextmenu = (e) => {
+            e.preventDefault();
+            menu.style.display = 'block';
+            menu.style.left = e.pageX + 'px';
+            menu.style.top = e.pageY + 'px';
+        };
+        window.onclick = () => { menu.style.display = 'none'; };
+
+        function handlePageNext() {
+            if (!isOpened) {
+                cover.classList.add('turn-effect');
+                leftPageFixed.style.display = 'block';
+                book.style.transform = "translateX(225px)";
+                isOpened = true;
+                if (journalData.pages.length === 0) addNewPageData();
+                showPage(0);
+            } else {
+                if (currentPageIndex < journalData.pages.length - 1) showPage(currentPageIndex + 1);
+                else { addNewPageData(); showPage(journalData.pages.length - 1); }
+            }
+        }
+
+        function handlePagePrev() {
+            if (!isOpened) return;
+            if (currentPageIndex === 0) {
+                cover.classList.remove('turn-effect');
+                leftPageFixed.style.display = 'none';
+                book.style.transform = "translateX(0px)";
+                isOpened = false; currentPageIndex = -1; hideAllPages();
+            } else showPage(currentPageIndex - 1);
+        }
+
+        function addNewPageData() {
+            journalData.pages.push({ bg: '', content: [] });
+            createPageElement(journalData.pages.length - 1);
+            save();
+        }
+
+        function createPageElement(index) {
+            const p = document.createElement('div');
+            p.className = 'page page-inside hidden';
+            p.id = `page-idx-${index}`;
+            p.innerHTML = `<div class="lines"></div><div class="sticker-layer" style="position:absolute; inset:0; pointer-events:none;"></div>`;
+            if (journalData.pages[index].bg) p.style.backgroundImage = `url('${journalData.pages[index].bg}')`;
+            pagesContainer.appendChild(p);
+        }
+
+        function showPage(index) { hideAllPages(); currentPageIndex = index; document.getElementById(`page-idx-${index}`).classList.remove('hidden'); }
+        function hideAllPages() { document.querySelectorAll('.page-inside').forEach(p => p.classList.add('hidden')); }
+
+        function changeCurrentBg() {
+            const url = prompt("Lien de l'image de fond :");
+            if (url) {
+                if (currentPageIndex === -1) { journalData.coverBg = url; cover.style.backgroundImage = `url('${url}')`; }
+                else { journalData.pages[currentPageIndex].bg = url; document.getElementById(`page-idx-${currentPageIndex}`).style.backgroundImage = `url('${url}')`; }
+                save();
+            }
+        }
+
+        function changeGlobalBg() {
+            const url = prompt("Lien de l'image de fond du site :");
+            if (url) { journalData.globalBg = url; document.body.style.backgroundImage = `url('${url}')`; save(); }
+        }
+
+        function addStickerByUrl() {
+            const url = prompt("URL du Sticker/GIF :");
+            if (url) createDraggable(url, 'img');
+        }
+
+        function addNewText() {
+            const val = prompt("Texte :");
+            if (val) createDraggable(val, 'text');
+        }
+
+        function createDraggable(content, type) {
+            const el = document.createElement(type === 'img' ? 'img' : 'div');
+            el.className = 'draggable';
+            if (type === 'img') { el.src = content; el.style.width = '120px'; }
+            else { 
+                el.innerText = content; 
+                el.classList.add('pixel-text-node'); 
+                el.onclick = (e) => { e.stopPropagation(); openTextConfig(el); };
+            }
+            el.style.left = '50px'; el.style.top = '50px';
+            el.dataset.rot = 0;
+            el.dataset.scale = 1; 
+            el.style.transform = `rotate(0deg) scale(1)`;
+            el.style.pointerEvents = 'auto';
+            
+            let activeLayer;
+            if (isOpened && currentPageIndex === 0) {
+                activeLayer = leftPageFixed.querySelector('.sticker-layer');
+            } else if (!isOpened) {
+                activeLayer = cover.querySelector('.sticker-layer');
+            } else {
+                activeLayer = document.getElementById(`page-idx-${currentPageIndex}`).querySelector('.sticker-layer');
+            }
+            
+            activeLayer.appendChild(el);
+            setupInteractions(el);
+            save();
+        }
+
+        function setupInteractions(el) {
+            el.onmousedown = (e) => {
+                if (e.button === 0) { 
+                    activeEl = el; 
+                    startPos.x = e.clientX - el.offsetLeft; 
+                    startPos.y = e.clientY - el.offsetTop; 
+                    el.style.zIndex = 1000;
+                    // EFFET ZOOM AU CLIC
+                    let r = el.dataset.rot || 0;
+                    let s = parseFloat(el.dataset.scale) || 1;
+                    el.style.transform = `scale(${s * 1.1}) rotate(${r}deg)`;
+                }
+                if (e.button === 1) { e.preventDefault(); el.remove(); save(); }
+            };
+            el.onwheel = (e) => {
+                e.preventDefault();
+                let r = parseFloat(el.dataset.rot) || 0;
+                let s = parseFloat(el.dataset.scale) || 1;
+                if (e.ctrlKey) {
+                    s += e.deltaY > 0 ? -0.1 : 0.1;
+                    s = Math.max(0.2, Math.min(s, 5));
+                } else {
+                    r += e.deltaY > 0 ? 10 : -10;
+                }
+                el.dataset.rot = r;
+                el.dataset.scale = s;
+                el.style.transform = `rotate(${r}deg) scale(${s})`;
+                save();
+            };
+        }
+
+        document.onmousemove = (e) => { if (activeEl) { activeEl.style.left = (e.clientX - startPos.x) + 'px'; activeEl.style.top = (e.clientY - startPos.y) + 'px'; } };
+        
+        document.onmouseup = () => { 
+            if (activeEl) { 
+                activeEl.style.zIndex = 10; 
+                // RETOUR TAILLE NORMALE
+                let r = activeEl.dataset.rot || 0;
+                let s = parseFloat(activeEl.dataset.scale) || 1;
+                activeEl.style.transform = `scale(${s}) rotate(${r}deg)`;
+                activeEl = null; 
+                save(); 
+            } 
+        };
+
+        function openTextConfig(el) {
+            editingTextEl = el;
+            textConfig.style.display = 'flex';
+            document.getElementById('text-input-edit').value = el.innerText;
+        }
+
+        function applyTextStyles() {
+            if (!editingTextEl) return;
+            editingTextEl.innerText = document.getElementById('text-input-edit').value;
+            editingTextEl.style.fontFamily = document.getElementById('font-select').value;
+            editingTextEl.style.color = document.getElementById('color-select').value;
+            editingTextEl.style.fontSize = document.getElementById('size-select').value + 'px';
+            textConfig.style.display = 'none';
+            save();
+        }
+
+        function save() { localStorage.setItem('myJournalData', JSON.stringify(journalData)); }
+        init();
+    </script>
+</body>
+</html>
