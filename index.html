@@ -144,7 +144,7 @@
             width: 300px;
         }
 
-        select, input[type="number"], input[type="text"] {
+        select, input[type="number"], input[type="text"], input[type="range"] {
             padding: 8px;
             border: 2px solid #5d4037;
             font-family: 'Quicksand', sans-serif;
@@ -203,6 +203,10 @@
         <h3 style="margin:0; font-family:'VT323'; text-align:center;">ÉDITEUR DE TEXTE 🎨</h3>
         <label style="font-size:0.8rem;">Modifier le texte :</label>
         <input type="text" id="text-input-edit">
+        
+        <label style="font-size:0.8rem;">Déformation Courbe (Skew) :</label>
+        <input type="range" id="skew-select" min="-40" max="40" value="0">
+
         <label style="font-size:0.8rem;">Police Unique :</label>
         <select id="font-select">
             <optgroup label="--- NOUVEAU & UNIQUE ---">
@@ -236,7 +240,7 @@
             <option value="glow">✨ Brillance (Glow)</option>
             <option value="shadow">🌑 Ombre Portée (3D)</option>
             <option value="outline">✏️ Contour (Outline)</option>
-            <option value="blur">🌫️ Flou Mystérieux</option>
+            <option value="blur">🌫️ Flou MystÉRIEUX</option>
         </select>
         <div style="display:flex; gap:10px;">
             <div style="flex:1;"><label style="font-size:0.8rem;">Couleur :</label><input type="color" id="color-select" value="#4a3728"></div>
@@ -387,7 +391,8 @@
             el.style.left = '50px'; el.style.top = '50px';
             el.dataset.rot = 0;
             el.dataset.scale = 1; 
-            el.style.transform = `rotate(0deg) scale(1)`;
+            el.dataset.skew = 0;
+            el.style.transform = `rotate(0deg) scale(1) skew(0deg)`;
             el.style.pointerEvents = 'auto';
             
             let activeLayer;
@@ -417,26 +422,28 @@
             el.style.top = data.top;
             el.dataset.rot = data.rot;
             el.dataset.scale = data.scale;
-            el.style.transform = `rotate(${data.rot}deg) scale(${data.scale})`;
+            el.dataset.skew = data.skew || 0;
+            el.style.transform = `rotate(${data.rot}deg) scale(${data.scale}) skew(${data.skew || 0}deg)`;
             el.style.pointerEvents = 'auto';
             layer.appendChild(el);
             setupInteractions(el);
         }
 
         function setupInteractions(el) {
-            // ANIMATION ZOOM QUAND LA SOURIS PASSE DESSUS
             el.onmouseenter = () => {
-                if (!activeEl) { // Ne pas zoomer si on est déjà en train de le déplacer
+                if (!activeEl) {
                     let r = el.dataset.rot || 0;
                     let s = parseFloat(el.dataset.scale) || 1;
-                    el.style.transform = `scale(${s * 1.1}) rotate(${r}deg)`;
+                    let sk = el.dataset.skew || 0;
+                    el.style.transform = `scale(${s * 1.1}) rotate(${r}deg) skew(${sk}deg)`;
                 }
             };
             el.onmouseleave = () => {
-                if (!activeEl) { // Ne pas dé-zoomer si on est en train de le déplacer
+                if (!activeEl) {
                     let r = el.dataset.rot || 0;
                     let s = parseFloat(el.dataset.scale) || 1;
-                    el.style.transform = `scale(${s}) rotate(${r}deg)`;
+                    let sk = el.dataset.skew || 0;
+                    el.style.transform = `scale(${s}) rotate(${r}deg) skew(${sk}deg)`;
                 }
             };
 
@@ -448,7 +455,8 @@
                     el.style.zIndex = 1000;
                     let r = el.dataset.rot || 0;
                     let s = parseFloat(el.dataset.scale) || 1;
-                    el.style.transform = `scale(${s * 1.1}) rotate(${r}deg)`;
+                    let sk = el.dataset.skew || 0;
+                    el.style.transform = `scale(${s * 1.1}) rotate(${r}deg) skew(${sk}deg)`;
                 }
                 if (e.button === 1) { e.preventDefault(); el.remove(); save(); }
             };
@@ -456,6 +464,7 @@
                 e.preventDefault();
                 let r = parseFloat(el.dataset.rot) || 0;
                 let s = parseFloat(el.dataset.scale) || 1;
+                let sk = el.dataset.skew || 0;
                 if (e.ctrlKey) {
                     s += e.deltaY > 0 ? -0.1 : 0.1;
                     s = Math.max(0.2, Math.min(s, 5));
@@ -464,7 +473,7 @@
                 }
                 el.dataset.rot = r;
                 el.dataset.scale = s;
-                el.style.transform = `rotate(${r}deg) scale(${s})`;
+                el.style.transform = `rotate(${r}deg) scale(${s}) skew(${sk}deg)`;
                 save();
             };
         }
@@ -474,7 +483,8 @@
             activeEl.style.zIndex = 10; 
             let r = activeEl.dataset.rot || 0;
             let s = parseFloat(activeEl.dataset.scale) || 1;
-            activeEl.style.transform = `scale(${s}) rotate(${r}deg)`;
+            let sk = activeEl.dataset.skew || 0;
+            activeEl.style.transform = `scale(${s}) rotate(${r}deg) skew(${sk}deg)`;
             activeEl = null; 
             save(); 
         } };
@@ -483,6 +493,7 @@
             editingTextEl = el;
             textConfig.style.display = 'flex';
             document.getElementById('text-input-edit').value = el.innerText;
+            document.getElementById('skew-select').value = el.dataset.skew || 0;
         }
 
         function applyTextStyles() {
@@ -491,6 +502,14 @@
             editingTextEl.style.fontFamily = document.getElementById('font-select').value;
             editingTextEl.style.color = document.getElementById('color-select').value;
             editingTextEl.style.fontSize = document.getElementById('size-select').value + 'px';
+            
+            // Appliquer le Skew (déformation)
+            let sk = document.getElementById('skew-select').value;
+            editingTextEl.dataset.skew = sk;
+            let r = editingTextEl.dataset.rot || 0;
+            let s = editingTextEl.dataset.scale || 1;
+            editingTextEl.style.transform = `rotate(${r}deg) scale(${s}) skew(${sk}deg)`;
+
             textConfig.style.display = 'none';
             save();
         }
@@ -504,6 +523,7 @@
                     top: el.style.top,
                     rot: el.dataset.rot,
                     scale: el.dataset.scale,
+                    skew: el.dataset.skew,
                     width: el.style.width,
                     font: el.style.fontFamily,
                     color: el.style.color,
